@@ -1,0 +1,7 @@
+* herebe
+
+This is a description of my herebe.
+
+** Usage
+
+To use my project, run this command: ./herebe --verbose
