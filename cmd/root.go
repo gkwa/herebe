@@ -13,11 +13,9 @@ import (
 	"github.com/taylormonacelli/goldbug"
 )
 
-var (
-	cfgFile   string
-	verbose   bool
-	logFormat string
-)
+var cfgFile string
+var verbose bool
+var logFormat string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
