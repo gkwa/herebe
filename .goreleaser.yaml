@@ -9,11 +9,18 @@ builds:
   - linux
   - windows
   - darwin
-  main: cmd/main.go
+  main: main.go
   goarch:
   - amd64
   binary: herebe
   id: herebe
+  ldflags:
+  - -s -w
+    -X "github.com/taylormonacelli/herebe/version.Version={{.Version}}"
+    -X "github.com/taylormonacelli/herebe/version.Date={{.CommitDate}}"
+    -X "github.com/taylormonacelli/herebe/version.GoVersion={{.Env.GOVERSION}}"
+    -X "github.com/taylormonacelli/herebe/version.ShortGitSHA={{.ShortCommit}}"
+    -X "github.com/taylormonacelli/herebe/version.FullGitSHA={{.FullCommit}}"
 archives:
 - format: tar.gz
   name_template: |-
