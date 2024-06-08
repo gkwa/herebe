@@ -1,54 +1,89 @@
 BIN := herebe
+PREFIX := github.com/gkwa/herebe/version
 
+SRC := $(wildcard *.go **/*.go)
+
+DATE := $(shell date +"%Y-%m-%dT%H:%M:%SZ")
 GOVERSION := $(shell go version)
-GOPATH := $(shell go env GOPATH)
+VERSION := $(shell git describe --tags --abbrev=8 --dirty --always --long)
+SHORT_SHA := $(shell git rev-parse --short HEAD)
+FULL_SHA := $(shell git rev-parse HEAD)
+export GOVERSION # goreleaser wants this
 
-export GOVERSION
+LDFLAGS = -s -w
+LDFLAGS += -X $(PREFIX).Version=$(VERSION)
+LDFLAGS += -X '$(PREFIX).Date=$(DATE)'
+LDFLAGS += -X '$(PREFIX).GoVersion=$(GOVERSION)'
+LDFLAGS += -X $(PREFIX).ShortGitSHA=$(SHORT_SHA)
+LDFLAGS += -X $(PREFIX).FullGitSHA=$(FULL_SHA)
 
-ifeq ($(OS),Windows_NT)
-    GO_FILES := $(shell dir /S /B *.go)
-    GO_DEPS := $(shell dir /S /B go.mod go.sum)
-    CLEAN := del
-    GOOS = windows
-    GOARCH = amd64
-    EXEEXT = .exe
-else ifeq ($(shell uname),Linux)
-    GOOS = linux
-    GOARCH = amd64
-    EXEEXT =
-else ifeq ($(shell uname),Darwin)
-    GOOS = darwin
-    GOARCH = amd64
-    EXEEXT =
-else
-    GO_FILES := $(shell find . -name '*.go')
-    GO_DEPS := $(shell find . -name go.mod -o -name go.sum)
-    CLEAN := rm -f
-endif
+.DEFAULT_GOAL := iterate
 
-APP := herebe$(EXEEXT)
-TARGET := ./dist/herebe_$(GOOS)_$(GOARCH)_v1/$(APP)
+all: check $(BIN) install
 
-$(APP): $(TARGET)
-	cp $< $@
+.PHONY: iterate # lint and rebuild
+iterate: check $(BIN)
 
-$(BIN): $(GO_FILES) $(GO_DEPS)
+.PHONY: check # lint and vet
+check: .timestamps/.check.time
+
+.timestamps/.check.time: tidy fmt lint vet
+	@mkdir -p .timestamps
+	@touch $@
+
+.PHONY: build # build
+build: $(BIN)
+
+$(BIN): .timestamps/.build.time
+	go build -ldflags "$(LDFLAGS)" -o $@
+
+.timestamps/.build.time: $(SRC)
+	@mkdir -p .timestamps
+	@touch $@
+
+.PHONY: goreleaser # run goreleaser
+goreleaser: goreleaser --clean
+
+.PHONY: tidy # go tidy
+tidy: .timestamps/.tidy.time
+
+.timestamps/.tidy.time: go.mod go.sum
 	go mod tidy
-	gofumpt -w $(GO_FILES)
+	@mkdir -p .timestamps
+	@touch $@
+
+.PHONY: fmt # go fmt
+fmt: .timestamps/.fmt.time
+
+.timestamps/.fmt.time: $(SRC)
+	gofumpt -w $(SRC)
+	@mkdir -p .timestamps
+	@touch $@
+
+.PHONY: lint # lint
+lint: .timestamps/.lint.time
+
+.timestamps/.lint.time: $(SRC)
 	golangci-lint run
-	go build -o $(BIN) main.go
+	@mkdir -p .timestamps
+	@touch $@
 
+.PHONY: vet # go vet
+vet: .timestamps/.vet.time
 
-$(TARGET): $(SOURCES)
-	gofumpt -w $(SOURCES)
-	goreleaser build --single-target --snapshot --clean
+.timestamps/.vet.time: $(SRC)
 	go vet ./...
+	@mkdir -p .timestamps
+	@touch $@
 
-all:
-	goreleaser build --snapshot --clean
+.PHONY: install # go install
+install:
+	go install -ldflags "$(LDFLAGS)"
 
-.PHONY: clean
+.PHONY: help # show makefile rules
+help:
+	@grep '^.PHONY: .* #' Makefile | sed 's/\.PHONY: \(.*\) # \(.*\)/\1 \2/' | expand -t20
+
+.PHONY: clean # clean bin
 clean:
-	rm -f herebe
-	rm -f $(TARGET)
-	rm -rf dist
+	$(RM) -r $(BIN) .timestamps
