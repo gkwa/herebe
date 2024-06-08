@@ -16,11 +16,11 @@ builds:
   id: herebe
   ldflags:
   - -s -w
-    -X "github.com/taylormonacelli/herebe/version.Version={{.Version}}"
-    -X "github.com/taylormonacelli/herebe/version.Date={{.CommitDate}}"
-    -X "github.com/taylormonacelli/herebe/version.GoVersion={{.Env.GOVERSION}}"
-    -X "github.com/taylormonacelli/herebe/version.ShortGitSHA={{.ShortCommit}}"
-    -X "github.com/taylormonacelli/herebe/version.FullGitSHA={{.FullCommit}}"
+    -X "github.com/gkwa/herebe/version.Version={{ .Version }}"
+    -X "github.com/gkwa/herebe/version.Date={{ .CommitDate }}"
+    -X "github.com/gkwa/herebe/version.GoVersion={{ .Env.GOVERSION }}"
+    -X "github.com/gkwa/herebe/version.ShortGitSHA={{ .ShortCommit }}"
+    -X "github.com/gkwa/herebe/version.FullGitSHA={{ .FullCommit }}"
 archives:
 - format: tar.gz
   name_template: |-
@@ -43,3 +43,20 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+brews:
+- name: herebe
+  directory: Formula
+  homepage: https://github.com/gkwa/herebe
+  repository:
+    owner: gkwa
+    name: homebrew-tools
+    branch: main
+scoops:
+- name: herebe
+  homepage: https://github.com/gkwa/herebe
+  description: "Description of the herebe project"
+  license: MIT
+  repository:
+    owner: gkwa
+    name: scoop-bucket
+    branch: master
